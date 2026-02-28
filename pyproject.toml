@@ -9,6 +9,9 @@ dependencies = [
     "rich>=14.3.3",
 ]
 
+[project.scripts]
+wiggums = "wiggums:cli"
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 

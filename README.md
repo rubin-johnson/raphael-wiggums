@@ -2,9 +2,10 @@
 
 PRD-to-stories pipeline and autonomous story executor.
 
-Two commands:
+Three commands:
 - `wiggums generate` — converts raw notes into an implementation plan
 - `wiggums execute` — runs the plan autonomously using Claude Code agents
+- `wiggums review` — evaluates a plan and suggests improvements
 
 ## Setup
 
@@ -30,10 +31,29 @@ wiggums generate notes.md -o features/plan.md --model opus
 Review `features/plan.md` before executing. Edit it freely — the executor parses
 the markdown structure, not the content.
 
+## Review a plan
+
+```bash
+# Get feedback on story quality, sizing, dependencies, coverage gaps
+wiggums review features/plan.md
+
+# Review + apply suggested rewrites (asks for confirmation before writing)
+wiggums review features/plan.md --rewrite
+
+# Review a partially-executed plan (loads plan_state.json automatically)
+wiggums review features/plan.md
+
+# Use Opus for deeper analysis
+wiggums review features/plan.md --model opus
+```
+
+The review command reads `plan_state.json` alongside the plan if it exists,
+so it knows which stories have already run and can factor in execution history.
+
 ## Execute a plan
 
 ```bash
-# Default: run overnight, parallel where possible, 3 retries per story
+# Default: run overnight, parallel where possible
 wiggums execute features/plan.md /path/to/target/repo
 
 # Limit concurrency (default 3)
@@ -42,29 +62,58 @@ wiggums execute features/plan.md /path/to/target/repo --max-concurrent 2
 # Pause for approval before each story (interactive mode)
 wiggums execute features/plan.md /path/to/target/repo --pause-between
 
-# More retries for harder stories
-wiggums execute features/plan.md /path/to/target/repo --max-retries 5
-
-# Use Opus (better for complex implementation)
-wiggums execute features/plan.md /path/to/target/repo --model opus
+# Model escalation: try sonnet 3 times, then opus 2 times per story
+wiggums execute features/plan.md /path/to/target/repo --model-escalation "sonnet:3,opus:2"
 
 # Cap spend per story
 wiggums execute features/plan.md /path/to/target/repo --budget-per-story 2.00
+
+# Write per-story logs and live status.json to a directory
+wiggums execute features/plan.md /path/to/target/repo --log-dir /tmp/wiggums-logs
 ```
 
-If interrupted, re-run the same command to resume — state is tracked in
-`features/plan_state.json`. Completed stories are skipped automatically.
+If interrupted (Ctrl-C), the executor finishes in-progress stories then stops cleanly.
+Re-run the same command to resume — state is tracked in `features/plan_state.json`.
+Completed stories are skipped automatically.
+
+## Observability (headless runs)
+
+With `--log-dir`:
+
+```bash
+# Watch live status
+watch -n2 cat /tmp/wiggums-logs/status.json
+
+# Tail a specific story's log
+tail -f /tmp/wiggums-logs/STORY-001_attempt_1.log
+
+# Follow the overall run log
+tail -f /tmp/wiggums-logs/run.log
+```
+
+## Model escalation
+
+`--model-escalation` controls retry behavior when a story needs multiple attempts:
+
+```
+sonnet:3        # Try up to 3 times on sonnet, then fail
+sonnet:3,opus:2 # Try 3 times on sonnet, escalate to opus for 2 more attempts
+opus:1          # Single attempt on opus only
+```
+
+Cheaper models run first. More capable models are reserved for stories that fail
+initial attempts. Cost per story is tracked and shown in the final summary.
 
 ## How execution works
 
 1. Stories with no unmet dependencies form the "ready set."
 2. Up to `--max-concurrent` agents launch simultaneously, each in an isolated git
    worktree (so concurrent file writes never collide).
-3. When an agent finishes with all tests passing, its branch merges back to main
-   and dependent stories unlock.
+3. When a story finishes successfully, its branch merges back to main and dependent
+   stories unlock immediately (no waiting for the whole batch).
 4. If an agent exhausts its context window before finishing, it commits partial
-   work and emits `STORY_RETRY_NEEDED`. The supervisor starts a fresh agent with
-   a carry-forward summary of what was done, up to `--max-retries` times.
+   work and emits `STORY_RETRY_NEEDED`. A fresh agent starts with a carry-forward
+   summary, using the next model in the escalation schedule.
 5. Merge conflicts are quarantined and flagged — the run continues with other stories.
 
 ## Story format

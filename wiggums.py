@@ -36,16 +36,18 @@ def generate(input_file, output, codebase, model):
 @click.argument("plan_file", type=click.Path(exists=True))
 @click.argument("target_repo", type=click.Path(exists=True))
 @click.option("--max-concurrent", default=3, show_default=True, help="Max parallel agents")
-@click.option("--max-retries", default=3, show_default=True, help="Max retries per story on context exhaustion")
+@click.option("--model-escalation", default="sonnet:3", show_default=True, help="Model retry schedule, e.g. 'sonnet:3,opus:2'")
 @click.option("--pause-between", is_flag=True, help="Pause for approval between stories")
-@click.option("--model", default="sonnet", type=click.Choice(["sonnet", "opus"]), help="Claude model to use")
 @click.option("--budget-per-story", default=None, type=float, help="Max spend per story in USD")
-def execute(plan_file, target_repo, max_concurrent, max_retries, pause_between, model, budget_per_story):
+@click.option("--log-dir", default=None, type=click.Path(), help="Directory for per-story logs and status.json")
+def execute(plan_file, target_repo, max_concurrent, model_escalation, pause_between, budget_per_story, log_dir):
     """Execute stories from a plan file using Claude Code agents."""
     import asyncio
     from pathlib import Path
     from execute.state import PlanState
     from execute.supervisor import Supervisor
+    from execute.cost import parse_escalation
+    from execute.wiggum_log import WiggumLog
 
     plan_path = Path(plan_file)
     repo_path = Path(target_repo)
@@ -57,15 +59,17 @@ def execute(plan_file, target_repo, max_concurrent, max_retries, pause_between, 
     else:
         state = PlanState.from_plan(plan_path)
 
+    wlog = WiggumLog(Path(log_dir)) if log_dir else None
+
     sup = Supervisor(
         state=state,
         plan_path=plan_path,
         target_repo=repo_path,
         max_concurrent=max_concurrent,
-        max_retries=max_retries,
+        escalation=parse_escalation(model_escalation),
         pause_between=pause_between,
-        model=model,
         budget_per_story=budget_per_story,
+        wiggum_log=wlog,
     )
     asyncio.run(sup.run())
 

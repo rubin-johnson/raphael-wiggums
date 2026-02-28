@@ -12,6 +12,14 @@ the story, make all tests pass, and commit the result. Do not move on to other s
 3. You commit your changes with a message: `feat({story_id}): <brief description>`
 4. You output the line `STORY_COMPLETE: {story_id}` as your final output.
 
+## Documentation & Usability Rules
+
+These apply to every story, no exceptions:
+
+- **If you add or change a CLI command or option**: update README.md in the same commit. Do not leave it for later.
+- **If you add a CLI command or entry point**: add a smoke test that invokes it via subprocess (not via a test framework mock), with a fake external binary in PATH if the command calls one. The test must prove a real user can run it.
+- If either of these would apply to your story and the story does not mention them, do them anyway — they are not optional.
+
 ## Failure Protocol
 
 If you reach the end of your context before all tests pass:
