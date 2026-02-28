@@ -109,6 +109,13 @@ def test_understand_help_has_correct_options():
     assert "--reduce-escalation" in result.stdout
 
 
+def test_critique_help_has_correct_options():
+    result = run(["critique", "--help"])
+    assert result.returncode == 0
+    assert "--plan-output" in result.stdout
+    assert "--run-understand" in result.stdout
+
+
 # ---------------------------------------------------------------------------
 # generate: notes → plan file
 # ---------------------------------------------------------------------------

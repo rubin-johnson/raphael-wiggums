@@ -50,6 +50,47 @@ raphael review features/plan.md --model opus
 The review command reads `plan_state.json` alongside the plan if it exists,
 so it knows which stories have already run and can factor in execution history.
 
+## Understand a codebase
+
+```bash
+# Build structural + semantic understanding (outputs to <repo>/.raphael/)
+raphael understand /path/to/repo
+
+# Use Opus for deeper per-module analysis
+raphael understand /path/to/repo --map-model opus
+
+# Higher quality reduce with stronger escalation
+raphael understand /path/to/repo --reduce-escalation "sonnet:3,opus:2"
+```
+
+The understand command runs in three stages:
+1. **Repo map** — extracts function/class structure using Python `ast` (no LLM, instant)
+2. **Module mapping** — one LLM call per file, produces structured JSON per module
+3. **Reduce + coherence gate** — aggregates into `understanding.md`, self-scores quality,
+   retries with escalation if the result is vague or inaccurate
+
+Outputs: `.raphael/repo_map.md`, `.raphael/map/*.json`, `.raphael/understanding.md`
+
+## Critique a codebase
+
+```bash
+# Must run understand first
+raphael understand /path/to/repo
+raphael critique /path/to/repo --plan-output features/plan.md
+
+# Or run understand automatically if missing
+raphael critique /path/to/repo --run-understand
+
+# Then execute the generated plan
+raphael execute features/plan.md /path/to/repo
+```
+
+The critique command scores improvement candidates with a bias toward simplification:
+
+**net_score = (simplification_value × 2) − risk − effort**
+
+New features score 0 on simplification unless they replace existing complexity.
+
 ## Execute a plan
 
 ```bash

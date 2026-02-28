@@ -137,5 +137,46 @@ def understand(repo_path, output_dir, map_model, reduce_escalation):
     click.echo(f"Next: raphael critique {repo_path}")
 
 
+@cli.command()
+@click.argument("repo_path", type=click.Path(exists=True))
+@click.option("--plan-output", default="features/plan.md", show_default=True, help="Where to write the generated plan")
+@click.option("--model", default="sonnet", type=click.Choice(["sonnet", "opus"]))
+@click.option("--run-understand", "auto_understand", is_flag=True, help="Run understand first if .raphael/understanding.md is missing")
+def critique(repo_path, plan_output, model, auto_understand):
+    """Critique a codebase and generate an improvement plan."""
+    from pathlib import Path
+    from understand.critic import run_critique_pipeline
+    from understand.pipeline import run_understand
+    from execute.cost import parse_escalation
+
+    repo = Path(repo_path)
+    understanding_path = repo / ".raphael" / "understanding.md"
+
+    if not understanding_path.exists():
+        if auto_understand:
+            click.echo("No understanding found — running raphael understand first...")
+            run_understand(repo)
+        else:
+            raise click.ClickException(
+                f"No understanding found at {understanding_path}. "
+                f"Run: raphael understand {repo_path}"
+            )
+
+    understanding = understanding_path.read_text()
+    click.echo("Critiquing codebase...")
+    critique_text, plan = run_critique_pipeline(understanding, model=model)
+
+    out_dir = repo / ".raphael"
+    out_dir.mkdir(exist_ok=True)
+    (out_dir / "critique.md").write_text(critique_text)
+    click.echo(f"Critique written to: {out_dir / 'critique.md'}")
+
+    plan_path = Path(plan_output)
+    plan_path.parent.mkdir(parents=True, exist_ok=True)
+    plan_path.write_text(plan)
+    click.echo(f"Plan written to: {plan_path}")
+    click.echo(f"\nNext: raphael execute {plan_path} {repo_path}")
+
+
 if __name__ == "__main__":
     cli()
