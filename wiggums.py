@@ -70,5 +70,44 @@ def execute(plan_file, target_repo, max_concurrent, max_retries, pause_between, 
     asyncio.run(sup.run())
 
 
+@cli.command()
+@click.argument("plan_file", type=click.Path(exists=True))
+@click.option("--rewrite", is_flag=True, help="Apply LLM-suggested rewrite to plan file after confirmation")
+@click.option("--model", default="sonnet", type=click.Choice(["sonnet", "opus"]), help="Claude model to use")
+def review(plan_file, rewrite, model):
+    """Evaluate a plan and suggest improvements."""
+    from pathlib import Path
+    from execute.state import PlanState
+    from review.reviewer import build_review_prompt, extract_rewritten_plan, summarize_state, call_claude
+
+    plan_path = Path(plan_file)
+    state_file = plan_path.parent / "plan_state.json"
+
+    state_summary = None
+    if state_file.exists():
+        state = PlanState.load(state_file, plan_path)
+        state_summary = summarize_state(state)
+        click.echo(f"Loaded execution state: {state_summary}")
+
+    click.echo("Reviewing plan...")
+    prompt = build_review_prompt(plan_path, state_summary)
+    raw = call_claude(prompt, model=model)
+
+    click.echo("\n" + raw)
+
+    if rewrite:
+        new_plan = extract_rewritten_plan(raw)
+        if new_plan is None:
+            click.echo("\nLLM did not suggest a rewrite.")
+        else:
+            click.echo("\n--- Proposed rewrite (first 500 chars) ---")
+            click.echo(new_plan[:500] + ("..." if len(new_plan) > 500 else ""))
+            if click.confirm("\nApply rewrite to plan file?"):
+                plan_path.write_text(new_plan)
+                click.echo(f"Plan updated: {plan_path}")
+            else:
+                click.echo("Rewrite discarded.")
+
+
 if __name__ == "__main__":
     cli()

@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import Optional
 
 from execute.state import PlanState
+from generate.prd import call_claude  # noqa: F401 — re-exported for patching in tests
 
 _PROMPT_TEMPLATE = Path(__file__).parent.parent / "prompts" / "review_plan.md"
 _START_MARKER = "===REWRITTEN_PLAN_START==="
