@@ -102,6 +102,13 @@ def test_review_help_has_correct_options():
     assert "--model" in result.stdout
 
 
+def test_understand_help_has_correct_options():
+    result = run(["understand", "--help"])
+    assert result.returncode == 0
+    assert "--map-model" in result.stdout
+    assert "--reduce-escalation" in result.stdout
+
+
 # ---------------------------------------------------------------------------
 # generate: notes → plan file
 # ---------------------------------------------------------------------------

@@ -113,5 +113,29 @@ def review(plan_file, rewrite, model):
                 click.echo("Rewrite discarded.")
 
 
+@cli.command()
+@click.argument("repo_path", type=click.Path(exists=True))
+@click.option("--output-dir", default=None, type=click.Path(), help="Where to write .raphael/ output (default: <repo>/.raphael/)")
+@click.option("--map-model", default="sonnet", type=click.Choice(["sonnet", "opus"]), help="Model for per-module mapping")
+@click.option("--reduce-escalation", default="sonnet:2,opus:1", show_default=True, help="Escalation for reduce + coherence gate")
+def understand(repo_path, output_dir, map_model, reduce_escalation):
+    """Build deep structural + semantic understanding of a codebase."""
+    from pathlib import Path
+    from execute.cost import parse_escalation
+    from understand.pipeline import run_understand
+
+    repo = Path(repo_path)
+    out = Path(output_dir) if output_dir else None
+    escalation = parse_escalation(reduce_escalation)
+
+    click.echo(f"Stage 1: Building repo map...")
+    click.echo(f"Stage 2: Mapping modules (model: {map_model})...")
+    click.echo(f"Stage 3: Reducing to understanding (escalation: {reduce_escalation})...")
+
+    understanding_path = run_understand(repo, output_dir=out, map_model=map_model, escalation=escalation)
+    click.echo(f"\nUnderstanding written to: {understanding_path}")
+    click.echo(f"Next: raphael critique {repo_path}")
+
+
 if __name__ == "__main__":
     cli()
