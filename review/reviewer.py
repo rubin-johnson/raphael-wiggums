@@ -1,6 +1,8 @@
 from pathlib import Path
 from typing import Optional
 
+from execute.state import PlanState
+
 _PROMPT_TEMPLATE = Path(__file__).parent.parent / "prompts" / "review_plan.md"
 _START_MARKER = "===REWRITTEN_PLAN_START==="
 _END_MARKER = "===REWRITTEN_PLAN_END==="
@@ -20,3 +22,15 @@ def extract_rewritten_plan(raw: str) -> Optional[str]:
         return None
     content = raw[start + len(_START_MARKER):end]
     return content.strip() or None
+
+
+def summarize_state(state: PlanState) -> str:
+    counts: dict[str, int] = {}
+    for s in state.stories.values():
+        counts[s.status.value] = counts.get(s.status.value, 0) + 1
+    parts = [f"{v} {k}" for k, v in counts.items()]
+    summary = ", ".join(parts)
+    total_cost = state.total_cost_usd()
+    if total_cost:
+        summary += f" | total cost so far: ${total_cost:.3f}"
+    return summary

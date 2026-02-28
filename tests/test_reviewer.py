@@ -40,3 +40,29 @@ def test_extract_rewritten_plan_strips_whitespace():
     raw = "===REWRITTEN_PLAN_START===\n\n# Plan\n\n===REWRITTEN_PLAN_END==="
     result = extract_rewritten_plan(raw)
     assert result == "# Plan"
+
+
+def test_summarize_state_counts_statuses(tmp_path):
+    from review.reviewer import summarize_state
+    from execute.state import PlanState
+    plan = tmp_path / "plan.md"
+    plan.write_text(
+        "## STORY-001 — Foo\n\n### Dependencies\n- None.\n\n---\n\n"
+        "## STORY-002 — Bar\n\n### Dependencies\n- None.\n"
+    )
+    state = PlanState.from_plan(plan)
+    state.mark_complete("STORY-001")
+    summary = summarize_state(state)
+    assert "completed" in summary
+    assert "pending" in summary
+
+
+def test_summarize_state_includes_cost_when_nonzero(tmp_path):
+    from review.reviewer import summarize_state
+    from execute.state import PlanState, StoryCost
+    plan = tmp_path / "plan.md"
+    plan.write_text("## STORY-001 — Foo\n\n### Dependencies\n- None.\n")
+    state = PlanState.from_plan(plan)
+    state.record_cost("STORY-001", StoryCost(cost_usd=0.05, model="sonnet", input_tokens=100, output_tokens=50))
+    summary = summarize_state(state)
+    assert "$0.05" in summary or "0.05" in summary
