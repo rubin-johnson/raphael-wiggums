@@ -55,7 +55,7 @@ def test_prd_pipeline_output_has_header(tmp_path):
         result = run_prd_pipeline(notes, codebase=None, model="sonnet")
 
     assert "# Implementation Plan" in result
-    assert "Sir Wiggums" in result
+    assert "Raphael" in result
 
 
 def test_prd_pipeline_no_codebase_skips_context(tmp_path):

@@ -1,5 +1,5 @@
 from click.testing import CliRunner
-from wiggums import cli
+from raphael import cli
 
 
 def test_cli_has_generate_command():

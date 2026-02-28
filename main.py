@@ -1,4 +1,4 @@
-from wiggums import cli
+from raphael import cli
 
 if __name__ == "__main__":
     cli()

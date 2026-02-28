@@ -3,7 +3,7 @@ import click
 
 @click.group()
 def cli():
-    """Sir Wiggums — PRD-to-stories pipeline and executor."""
+    """Raphael — PRD-to-stories pipeline and executor."""
     pass
 
 

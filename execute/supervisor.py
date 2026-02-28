@@ -45,7 +45,7 @@ class Supervisor:
         self._shutdown = False
 
     async def run(self) -> None:
-        console.rule("[bold blue]Sir Wiggums — Executor[/bold blue]")
+        console.rule("[bold blue]Raphael — Executor[/bold blue]")
         if self._wlog:
             console.print(f"[dim]Logs: {self._wlog.log_dir}[/dim]")
             console.print(f"[dim]Status: tail -f {self._wlog.run_log}[/dim]")

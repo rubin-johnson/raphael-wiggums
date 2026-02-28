@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ---
 
-## Project: Sir Wiggums
+## Project: Raphael
 
-CLI tool that converts raw notes into dependency-ordered implementation stories (`wiggums generate`) and executes them autonomously using Claude Code agents (`wiggums execute`). Plan quality can be evaluated with `wiggums review`.
+CLI tool that converts raw notes into dependency-ordered implementation stories (`raphael generate`) and executes them autonomously using Claude Code agents (`raphael execute`). Plan quality can be evaluated with `raphael review`.
 
 ---
 
@@ -14,7 +14,7 @@ CLI tool that converts raw notes into dependency-ordered implementation stories 
 
 **Always update README.md when you change the CLI interface, add a command, change an option name, or add a feature users interact with.**
 
-Specifically, before committing any change to `wiggums.py`, `execute/supervisor.py`, or any module that changes observable behavior: read `README.md`, identify what is now stale, and update it in the same commit.
+Specifically, before committing any change to `raphael.py`, `execute/supervisor.py`, or any module that changes observable behavior: read `README.md`, identify what is now stale, and update it in the same commit.
 
 ---
 
@@ -23,11 +23,11 @@ Specifically, before committing any change to `wiggums.py`, `execute/supervisor.
 ```
 [Raw notes / text]
        ↓
-  wiggums generate   →  features/plan.md  (two-stage LLM: notes → PRD → stories)
+  raphael generate   →  features/plan.md  (two-stage LLM: notes → PRD → stories)
        ↓
-  wiggums review     →  feedback + optional rewrite (LLM evaluates story quality)
+  raphael review     →  feedback + optional rewrite (LLM evaluates story quality)
        ↓
-  wiggums execute    →  runs stories as parallel Claude Code agents
+  raphael execute    →  runs stories as parallel Claude Code agents
        ↓
   [Target repo with all stories merged to main]
 ```
@@ -36,7 +36,7 @@ Specifically, before committing any change to `wiggums.py`, `execute/supervisor.
 
 | Module | Purpose |
 |--------|---------|
-| `wiggums.py` | Click CLI entry point |
+| `raphael.py` | Click CLI entry point |
 | `generate/prd.py` | Two-stage LLM pipeline (notes → PRD → stories) |
 | `execute/state.py` | PlanState, StoryState, StoryCost — serialized to plan_state.json |
 | `execute/supervisor.py` | Async orchestrator — parallel scheduling, retry, merge |

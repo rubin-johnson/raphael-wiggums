@@ -1,11 +1,11 @@
-# Sir Wiggums
+# Raphael
 
 PRD-to-stories pipeline and autonomous story executor.
 
 Three commands:
-- `wiggums generate` — converts raw notes into an implementation plan
-- `wiggums execute` — runs the plan autonomously using Claude Code agents
-- `wiggums review` — evaluates a plan and suggests improvements
+- `raphael generate` — converts raw notes into an implementation plan
+- `raphael execute` — runs the plan autonomously using Claude Code agents
+- `raphael review` — evaluates a plan and suggests improvements
 
 ## Setup
 
@@ -19,13 +19,13 @@ Requires `claude` CLI installed and authenticated (`claude --version`).
 
 ```bash
 # From raw notes
-wiggums generate notes.md -o features/plan.md
+raphael generate notes.md -o features/plan.md
 
 # With existing codebase for context (better story quality)
-wiggums generate notes.md -o features/plan.md --codebase /path/to/repo
+raphael generate notes.md -o features/plan.md --codebase /path/to/repo
 
 # Use Opus for more careful PRD decomposition
-wiggums generate notes.md -o features/plan.md --model opus
+raphael generate notes.md -o features/plan.md --model opus
 ```
 
 Review `features/plan.md` before executing. Edit it freely — the executor parses
@@ -35,16 +35,16 @@ the markdown structure, not the content.
 
 ```bash
 # Get feedback on story quality, sizing, dependencies, coverage gaps
-wiggums review features/plan.md
+raphael review features/plan.md
 
 # Review + apply suggested rewrites (asks for confirmation before writing)
-wiggums review features/plan.md --rewrite
+raphael review features/plan.md --rewrite
 
 # Review a partially-executed plan (loads plan_state.json automatically)
-wiggums review features/plan.md
+raphael review features/plan.md
 
 # Use Opus for deeper analysis
-wiggums review features/plan.md --model opus
+raphael review features/plan.md --model opus
 ```
 
 The review command reads `plan_state.json` alongside the plan if it exists,
@@ -54,22 +54,22 @@ so it knows which stories have already run and can factor in execution history.
 
 ```bash
 # Default: run overnight, parallel where possible
-wiggums execute features/plan.md /path/to/target/repo
+raphael execute features/plan.md /path/to/target/repo
 
 # Limit concurrency (default 3)
-wiggums execute features/plan.md /path/to/target/repo --max-concurrent 2
+raphael execute features/plan.md /path/to/target/repo --max-concurrent 2
 
 # Pause for approval before each story (interactive mode)
-wiggums execute features/plan.md /path/to/target/repo --pause-between
+raphael execute features/plan.md /path/to/target/repo --pause-between
 
 # Model escalation: try sonnet 3 times, then opus 2 times per story
-wiggums execute features/plan.md /path/to/target/repo --model-escalation "sonnet:3,opus:2"
+raphael execute features/plan.md /path/to/target/repo --model-escalation "sonnet:3,opus:2"
 
 # Cap spend per story
-wiggums execute features/plan.md /path/to/target/repo --budget-per-story 2.00
+raphael execute features/plan.md /path/to/target/repo --budget-per-story 2.00
 
 # Write per-story logs and live status.json to a directory
-wiggums execute features/plan.md /path/to/target/repo --log-dir /tmp/wiggums-logs
+raphael execute features/plan.md /path/to/target/repo --log-dir /tmp/raphael-logs
 ```
 
 If interrupted (Ctrl-C), the executor finishes in-progress stories then stops cleanly.
@@ -82,13 +82,13 @@ With `--log-dir`:
 
 ```bash
 # Watch live status
-watch -n2 cat /tmp/wiggums-logs/status.json
+watch -n2 cat /tmp/raphael-logs/status.json
 
 # Tail a specific story's log
-tail -f /tmp/wiggums-logs/STORY-001_attempt_1.log
+tail -f /tmp/raphael-logs/STORY-001_attempt_1.log
 
 # Follow the overall run log
-tail -f /tmp/wiggums-logs/run.log
+tail -f /tmp/raphael-logs/run.log
 ```
 
 ## Model escalation

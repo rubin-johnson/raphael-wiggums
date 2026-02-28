@@ -16,7 +16,7 @@ from pathlib import Path
 import pytest
 
 REPO_ROOT = Path(__file__).parent.parent
-WIGGUMS = [sys.executable, str(REPO_ROOT / "wiggums.py")]
+RAPHAEL = [sys.executable, str(REPO_ROOT / "raphael.py")]
 
 MINIMAL_PLAN = """\
 ## STORY-001 — Write a file
@@ -43,7 +43,7 @@ def test_output_exists(tmp_path):
 
 def run(args, cwd=None, env=None, input=None):
     return subprocess.run(
-        WIGGUMS + args,
+        RAPHAEL + args,
         capture_output=True,
         text=True,
         cwd=cwd or REPO_ROOT,

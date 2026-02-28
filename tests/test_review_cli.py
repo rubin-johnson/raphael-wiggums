@@ -1,7 +1,7 @@
 from pathlib import Path
 from unittest.mock import patch
 from click.testing import CliRunner
-from wiggums import cli
+from raphael import cli
 
 SIMPLE_PLAN = """## STORY-001 — Foo
 

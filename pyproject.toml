@@ -1,5 +1,5 @@
 [project]
-name = "sir-wiggums"
+name = "raphael-wiggums"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
@@ -10,7 +10,7 @@ dependencies = [
 ]
 
 [project.scripts]
-wiggums = "wiggums:cli"
+raphael = "raphael:cli"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
