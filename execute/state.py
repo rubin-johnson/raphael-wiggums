@@ -15,6 +15,14 @@ class StoryStatus(str, Enum):
 
 
 @dataclass
+class StoryCost:
+    input_tokens: int = 0
+    output_tokens: int = 0
+    cost_usd: float = 0.0
+    model: str = ""
+
+
+@dataclass
 class StoryState:
     id: str
     title: str
@@ -23,6 +31,7 @@ class StoryState:
     retry_count: int = 0
     retry_notes: list[str] = field(default_factory=list)
     worktree_branch: Optional[str] = None
+    cost: StoryCost = field(default_factory=StoryCost)
 
     def is_ready(self, completed_ids: set[str]) -> bool:
         return (
@@ -79,6 +88,14 @@ class PlanState:
                 s.retry_count = saved.get("retry_count", 0)
                 s.retry_notes = saved.get("retry_notes", [])
                 s.worktree_branch = saved.get("worktree_branch")
+                if "cost" in saved:
+                    c = saved["cost"]
+                    s.cost = StoryCost(
+                        input_tokens=c.get("input_tokens", 0),
+                        output_tokens=c.get("output_tokens", 0),
+                        cost_usd=c.get("cost_usd", 0.0),
+                        model=c.get("model", ""),
+                    )
         return base
 
     def save(self, state_file: Path) -> None:
@@ -91,6 +108,12 @@ class PlanState:
                     "retry_count": s.retry_count,
                     "retry_notes": s.retry_notes,
                     "worktree_branch": s.worktree_branch,
+                    "cost": {
+                        "input_tokens": s.cost.input_tokens,
+                        "output_tokens": s.cost.output_tokens,
+                        "cost_usd": s.cost.cost_usd,
+                        "model": s.cost.model,
+                    },
                 }
                 for sid, s in self.stories.items()
             }
@@ -107,6 +130,17 @@ class PlanState:
             s for s in self.stories.values()
             if s.is_ready(done) and s.id not in running
         ]
+
+    def record_cost(self, story_id: str, cost: StoryCost) -> None:
+        self.stories[story_id].cost = cost
+
+    def total_cost_usd(self) -> float:
+        return sum(s.cost.cost_usd for s in self.stories.values())
+
+    def total_tokens(self) -> tuple[int, int]:
+        ins = sum(s.cost.input_tokens for s in self.stories.values())
+        outs = sum(s.cost.output_tokens for s in self.stories.values())
+        return ins, outs
 
     def mark_complete(self, story_id: str) -> None:
         self.stories[story_id].status = StoryStatus.COMPLETED

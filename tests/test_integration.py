@@ -9,6 +9,7 @@ from unittest.mock import patch
 from execute.state import PlanState, StoryStatus
 from execute.supervisor import Supervisor
 from execute.runner import AgentResult
+from execute.cost import parse_escalation
 
 MINIMAL_PLAN = """# Test Plan
 
@@ -77,7 +78,7 @@ async def test_full_loop_two_dependent_stories(tmp_path):
     state = PlanState.from_plan(plan)
     execution_order = []
 
-    async def mock_launch(story_id, story, attempt):
+    async def mock_launch(story_id, story, attempt, model):
         execution_order.append(story_id)
         branch = f"{story_id.lower()}-attempt-{attempt}"
         subprocess.run(["git", "checkout", "-b", branch], cwd=repo, check=True, capture_output=True)
@@ -92,7 +93,7 @@ async def test_full_loop_two_dependent_stories(tmp_path):
             worktree_path=str(repo), branch=branch,
         )
 
-    sup = Supervisor(state, plan, repo, max_concurrent=3, max_retries=3)
+    sup = Supervisor(state, plan, repo, max_concurrent=3, escalation=parse_escalation("sonnet:3"))
     with patch.object(sup, "_launch_agent", side_effect=mock_launch):
         await sup.run()
 
@@ -111,7 +112,7 @@ async def test_state_file_written_after_run(tmp_path):
 
     state = PlanState.from_plan(plan)
 
-    async def mock_launch(story_id, story, attempt):
+    async def mock_launch(story_id, story, attempt, model):
         branch = f"{story_id.lower()}-attempt-{attempt}"
         subprocess.run(["git", "checkout", "-b", branch], cwd=repo, check=True, capture_output=True)
         (repo / f"{story_id}.txt").write_text("done")
@@ -123,7 +124,7 @@ async def test_state_file_written_after_run(tmp_path):
             stderr="", exit_code=0, worktree_path=str(repo), branch=branch,
         )
 
-    sup = Supervisor(state, plan, repo, max_concurrent=3, max_retries=3)
+    sup = Supervisor(state, plan, repo, max_concurrent=3, escalation=parse_escalation("sonnet:3"))
     with patch.object(sup, "_launch_agent", side_effect=mock_launch):
         await sup.run()
 
@@ -154,7 +155,7 @@ async def test_resumed_run_skips_completed_stories(tmp_path):
     # Reload state as the executor would
     state2 = PlanState.load(state_file, plan)
 
-    async def mock_launch(story_id, story, attempt):
+    async def mock_launch(story_id, story, attempt, model):
         launched.append(story_id)
         branch = f"{story_id.lower()}-attempt-{attempt}"
         subprocess.run(["git", "checkout", "-b", branch], cwd=repo, check=True, capture_output=True)
@@ -167,7 +168,7 @@ async def test_resumed_run_skips_completed_stories(tmp_path):
             stderr="", exit_code=0, worktree_path=str(repo), branch=branch,
         )
 
-    sup = Supervisor(state2, plan, repo, max_concurrent=3, max_retries=3)
+    sup = Supervisor(state2, plan, repo, max_concurrent=3, escalation=parse_escalation("sonnet:3"))
     with patch.object(sup, "_launch_agent", side_effect=mock_launch):
         await sup.run()
 
